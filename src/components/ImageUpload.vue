@@ -1,15 +1,20 @@
 <template>
-    <div class="image-upload-container">
-      <input type="file" @change="onFileChange" />
-      <canvas v-if="image" ref="canvas"></canvas>
-    </div>
-  </template>
+  <div class="image-upload-container">
+    <input type="file" @change="onFileChange" />
+    <canvas v-if="image" ref="canvas" @mousedown="startPainting" @mousemove="paint" @mouseup="stopPainting" @mouseleave="stopPainting"></canvas>
+    <input type="color" v-model="brushColor" /> <!-- Color Picker -->
+    <input type="range" v-model="brushSize" min="1" max="50" /> <!-- Brush Size Selector -->
+  </div>
+</template>
   
   <script>
   export default {
     data() {
       return {
-        image: null
+        image: null,
+        isPainting: false,
+        brushColor: '#000000', // Default brush color, can be changed later
+        brushSize: 5, // Default brush size
       };
     },
     methods: {
@@ -46,10 +51,36 @@
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         };
         img.src = this.image;
-        }
-    }
-  };
-  </script>
+        },
+    startPainting(event) {
+      this.isPainting = true;
+      this.paint(event);
+    },
+    paint(event) {
+  if (!this.isPainting) return;
+  const ctx = this.$refs.canvas.getContext('2d');
+  const rect = this.$refs.canvas.getBoundingClientRect();
+
+  // Adjusted coordinates for brush stroke
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+
+  ctx.strokeStyle = this.brushColor;
+  ctx.lineWidth = this.brushSize;
+  ctx.lineCap = 'round';
+
+  ctx.lineTo(x, y);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+},
+    stopPainting() {
+      this.isPainting = false;
+      this.$refs.canvas.getContext('2d').beginPath();
+    },
+  }
+};
+</script>
   <style scoped>
   .image-upload-container {
     display: flex;
